@@ -17,6 +17,7 @@ pipeline {
           git url: 'https://github.com/saurabh-chamola/Wanderlust-Mega-Project.git', branch: 'main'
       }
     }
+    
 
     stage('Trivy: Vulnerability Scan') {
       steps {
