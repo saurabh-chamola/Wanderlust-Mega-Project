@@ -5,6 +5,7 @@ pipeline {
         SONAR_HOME= tool "Sonar"
         DOCKER_REPO = 'your-docker-repo'
     }
+    
 
     stages {
         stage('Workspace Cleanup') {
