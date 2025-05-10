@@ -19,12 +19,12 @@ pipeline {
         }
 
 
-        stage('OWASP Dependency Check') {
-            // steps {
-            //     dependencyCheck additionalArguments: '--scan ./ -o ./owasp-report.xml', odcInstallation: 'OWASP'
-            //     dependencyCheckPublisher pattern: '**/owasp-report.xml'
-            // }
-        }
+        // stage('OWASP Dependency Check') {
+        //     // steps {
+        //     //     dependencyCheck additionalArguments: '--scan ./ -o ./owasp-report.xml', odcInstallation: 'OWASP'
+        //     //     dependencyCheckPublisher pattern: '**/owasp-report.xml'
+        //     // }
+        // }
 
         stage('Docker Build and Push') {
             steps {
