@@ -5,11 +5,19 @@ pipeline {
         SONAR_HOME= tool "Sonar"
         DOCKER_REPO = 'your-docker-repo'
     }
-    
+
 
     stages {
         stage('Workspace Cleanup') {
             steps { cleanWs() }
+        }
+
+       stage('Git: Code Checkout') {
+            steps {
+                script{
+                    code_checkout("https://github.com/saurabh-chamola/Wanderlust-Mega-Project.git","main")
+                }
+            }
         }
 
         stage('Trivy: Vulnerability Scan') {
