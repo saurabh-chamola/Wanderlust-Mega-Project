@@ -13,7 +13,7 @@ pipeline {
         stage('Trivy: Vulnerability Scan') {
             steps {
                 script {
-                    sh 'trivy image --format table --output trivy-report.txt'
+                    sh 'trivy fs --format table --output trivy-report.txt .'
                 }
             }
         }
