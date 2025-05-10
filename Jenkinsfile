@@ -1,4 +1,3 @@
-@Library('Shared') _
 pipeline {
     agent any
 
@@ -133,16 +132,16 @@ pipeline {
             steps{
                 script{
                         dir('backend'){
-                            sh "docker build -t wanderlust-backend-beta:${env.BUILD_NUMBER} ."
+                            sh "docker build -t wanderlust-backend-beta:new ."
                         }
                         
                         dir('frontend'){
-                            sh "docker build -t wanderlust-frontend-beta:${env.BUILD_NUMBER} ."
+                            sh "docker build -t wanderlust-frontend-beta:new ."
                         }
                 }
             }
         }
-
+        
         stage('Run Containers for Testing') {
             steps {
                 script {
@@ -151,6 +150,20 @@ pipeline {
                 }
             }
         }
+        stage('push to docker hub'){
+            steps{
+                script{
+                    withCredentials([usernamePassword(credentialsId:"docker-cred",passwordVariable:"dockerPass",usernameVariable:"dockerUser")]){
+                        sh "docker login -u ${dockerUser} -p ${dockerPass}"
+                        sh "docker tag wanderlust-frontend-beta:new ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
+                        sh "docker tag wanderlust-backend-beta:new  ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
+                        sh "docker push ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
+                        sh "docker push ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
+                    }
+                }
+            }
+        }
+
     }
 
     post {
