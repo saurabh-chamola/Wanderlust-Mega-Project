@@ -8,66 +8,72 @@ pipeline {
 
     stages {
         stage('Workspace Cleanup') {
-      steps { cleanWs() }
+            steps { cleanWs() }
         }
 
-
-    stage('Git: Code Checkout') {
-      steps {
-          git url: 'https://github.com/saurabh-chamola/Wanderlust-Mega-Project.git', branch: 'main'
-      }
-    }
-    
-
-    stage('Trivy: Vulnerability Scan') {
-      steps {
-        script {
-          sh 'trivy fs . > trivy-report.txt'
-          archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
+        stage('Git: Code Checkout') {
+            steps {
+                git url: 'https://github.com/saurabh-chamola/Wanderlust-Mega-Project.git', branch: 'main'
+            }
         }
-      }
-    }
+
+        stage('Trivy: Vulnerability Scan') {
+            steps {
+                script {
+                    sh 'trivy fs . > trivy-report.txt'
+                    archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
+                }
+            }
+        }
 
         stage('Docker: Build Images') {
-      steps {
-        script {
-          dir('backend') {
-            sh 'docker build -t wanderlust-backend-beta:new .'
-          }
-
-          dir('frontend') {
-            sh 'docker build -t wanderlust-frontend-beta:new .'
-          }
-        }
-      }
+            steps {
+                script {
+                    dir('backend') {
+                        sh 'docker build -t wanderlust-backend-beta:new .'
+                    }
+                    dir('frontend') {
+                        sh 'docker build -t wanderlust-frontend-beta:new .'
+                    }
+                }
+            }
         }
 
         stage('Run Containers for Testing') {
-      steps {
-        script {
-          sh 'docker-compose down || true'
-          sh 'docker-compose up -d'
+            steps {
+                script {
+                    sh 'docker-compose down || true'
+                    sh 'docker-compose up -d'
+                }
+            }
         }
-      }
-        }
-        stage('push to docker hub') {
-      steps {
-        script {
-          withCredentials([usernamePassword(credentialsId:'docker-cred', passwordVariable:'dockerPass', usernameVariable:'dockerUser')]) {
-            sh "docker login -u ${dockerUser} -p ${dockerPass}"
-            sh "docker tag wanderlust-frontend-beta:new ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
-            sh "docker tag wanderlust-backend-beta:new  ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
-            sh "docker push ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
-            sh "docker push ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
-          }
-        }
-      }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-cred', passwordVariable: 'dockerPass', usernameVariable: 'dockerUser')]) {
+                        sh "docker login -u ${dockerUser} -p ${dockerPass}"
+                        sh "docker tag wanderlust-frontend-beta:new ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
+                        sh "docker tag wanderlust-backend-beta:new ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
+                        sh "docker push ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
+                        sh "docker push ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
+                    }
+                }
+            }
         }
     }
 
     post {
+        success {
+            // Trigger CD Pipeline with BUILD_NUMBER
+            build job: 'wanderlust-CD', 
+                  parameters: [
+                      string(name: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}")
+                  ]
+        }
+
         always {
-      emailext attachLog: true,
+            emailext attachLog: true,
                     from: 'sourabhchamola5@gmail.com',
                     to: 'sourabhchamola5@gmail.com',
                     subject: "CI/CD Pipeline - ${currentBuild.result}",
