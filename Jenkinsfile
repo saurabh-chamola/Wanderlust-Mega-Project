@@ -45,8 +45,8 @@ pipeline {
         stage('Run Containers for Testing') {
             steps {
                 script {
-                    sh 'docker-compose down || true'
-                    sh 'docker-compose up -d'
+                    // sh 'docker-compose down || true'
+                    // sh 'docker-compose up -d'
                 }
             }
         }
