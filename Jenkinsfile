@@ -29,18 +29,19 @@ pipeline {
             }
         }
 
-        stage('Docker: Build Images') {
-            steps {
-                script {
-                    dir('backend') {
-                        sh "docker build -t ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER} ."
-                    }
-                    dir('frontend') {
-                        sh "docker build -t ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER} ."
-                    }
-                }
+stage('Docker: Build Images') {
+    steps {
+        script {
+            dir('backend') {
+                sh "docker buildx build -t ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER} . --load"
+            }
+            dir('frontend') {
+                sh "docker buildx build -t ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER} . --load"
             }
         }
+    }
+}
+
 
         stage('Run Containers for Testing') {
             steps {
