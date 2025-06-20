@@ -47,6 +47,7 @@ pipeline {
                 script {
                     // sh 'docker-compose down || true'
                     // sh 'docker-compose up -d'
+                      echo '🔧 Hello from Jenkins!'
                 }
             }
         }
