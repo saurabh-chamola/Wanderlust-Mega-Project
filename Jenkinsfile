@@ -2,16 +2,19 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOME = tool 'Sonar'
-        DOCKER_REPO = 'your-docker-repo'
+        github_url = 'https://github.com/saurabh-chamola/kubernetes.git'
+        docker_username = 'saurabh0010'
+        docker_repo = "${docker_username}"
     }
 
     stages {
         stage('Workspace Cleanup') {
-            steps { cleanWs() }
+            steps {
+                cleanWs()
+            }
         }
 
-        stage('Git: Code Checkout') {
+        stage('Git: Checkout Application Code') {
             steps {
                 git url: 'https://github.com/saurabh-chamola/Wanderlust-Mega-Project.git', branch: 'main'
             }
@@ -30,10 +33,10 @@ pipeline {
             steps {
                 script {
                     dir('backend') {
-                        sh 'docker build -t wanderlust-backend-beta:new .'
+                        sh "docker build -t ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER} ."
                     }
                     dir('frontend') {
-                        sh 'docker build -t wanderlust-frontend-beta:new .'
+                        sh "docker build -t ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER} ."
                     }
                 }
             }
@@ -48,46 +51,88 @@ pipeline {
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Docker: Push Images to Docker Hub') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-cred', passwordVariable: 'dockerPass', usernameVariable: 'dockerUser')]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'dockerUser', passwordVariable: 'dockerPass')]) {
                         sh "docker login -u ${dockerUser} -p ${dockerPass}"
-                        sh "docker tag wanderlust-frontend-beta:new ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
-                        sh "docker tag wanderlust-backend-beta:new ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
-                        sh "docker push ${dockerUser}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
-                        sh "docker push ${dockerUser}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
+                        sh "docker push ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER}"
+                        sh "docker push ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER}"
+                    }
+                }
+            }
+        }
+
+        stage('Git: Checkout Kubernetes Repo') {
+            steps {
+                git url: "${github_url}", branch: 'main'
+            }
+        }
+
+        stage('CD: Update Kubernetes YAML Files') {
+            steps {
+                script {
+                    dir('backend') {
+                        sh "sed -i 's|${docker_username}/wanderlust-backend-beta:.*|${docker_username}/wanderlust-backend-beta:${env.BUILD_NUMBER}|' kubernetes/backend.yaml"
+                    }
+                    dir('frontend') {
+                        sh "sed -i 's|${docker_username}/wanderlust-frontend-beta:.*|${docker_username}/wanderlust-frontend-beta:${env.BUILD_NUMBER}|' kubernetes/frontend.yaml"
+                    }
+                }
+            }
+        }
+
+        stage("Git: Commit and Push YAML Updates") {
+            steps {
+                script {
+                    withCredentials([gitUsernamePassword(credentialsId: 'github-cred', gitToolName: 'Default')]) {
+                        sh '''
+                            git config --global user.email "ci@wanderlust.com"
+                            git config --global user.name "CI Bot"
+
+                            echo "Adding changes..."
+                            git add .
+
+                            echo "Committing changes..."
+                            git commit -m "CI/CD: Updated image versions to BUILD_NUMBER=$BUILD_NUMBER" || echo "No changes to commit"
+
+                            echo "Pushing changes to GitHub..."
+                            git push https://github.com/saurabh-chamola/kubernetes.git main
+                        '''
                     }
                 }
             }
         }
     }
 
-
-
     post {
         success {
-            // Trigger CD Pipeline with BUILD_NUMBER
-            build job: 'wanderlust-CD', 
-                  parameters: [
-                      string(name: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}")
-                  ]
-        }
-
-        always {
             emailext attachLog: true,
-                    from: 'sourabhchamola5@gmail.com',
                     to: 'sourabhchamola5@gmail.com',
-                    subject: "CI/CD Pipeline - ${currentBuild.result}",
+                    subject: "✅ CI/CD Pipeline Success - Build ${env.BUILD_NUMBER}",
                     body: """
                         <html>
                         <body>
-                            <h3>CI/CD Pipeline Report</h3>
-                            <p><strong>Build Status:</strong> ${currentBuild.result}</p>
-                            <p><strong>Build ID:</strong> ${BUILD_ID}</p>
-                            <p><strong>Trivy Report:</strong> <a href='${env.BUILD_URL}artifact/trivy-report.txt'>View Report</a></p>
-                            <p><strong>OWASP Report:</strong> <a href='${env.BUILD_URL}artifact/owasp-report.xml'>View Report</a></p>
-                            <p><strong>SonarQube:</strong> <a href='http://localhost:9000/dashboard?id=nodetodo'>View Dashboard</a></p>
+                            <h2 style='color:green;'>CI/CD Pipeline Completed Successfully</h2>
+                            <p><b>Build ID:</b> ${BUILD_ID}</p>
+                            <p><b>Build URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                            <p><b>Trivy Report:</b> <a href='${env.BUILD_URL}artifact/trivy-report.txt'>View Trivy Report</a></p>
+                        </body>
+                        </html>
+                    """,
+                    mimeType: 'text/html'
+        }
+
+        failure {
+            emailext attachLog: true,
+                    to: 'sourabhchamola5@gmail.com',
+                    subject: "❌ CI/CD Pipeline FAILED - Build ${env.BUILD_NUMBER}",
+                    body: """
+                        <html>
+                        <body>
+                            <h2 style='color:red;'>CI/CD Pipeline Failed</h2>
+                            <p><b>Build ID:</b> ${BUILD_ID}</p>
+                            <p><b>Build URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
                         </body>
                         </html>
                     """,
