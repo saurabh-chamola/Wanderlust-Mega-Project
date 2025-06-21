@@ -33,14 +33,15 @@ stage('Docker: Build Images') {
     steps {
         script {
             dir('backend') {
-                sh "docker build build -t ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER} . "
+                sh "docker buildx build -t ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER} . --load"
             }
             dir('frontend') {
-                sh "docker build build -t ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER} . "
+                sh "docker buildx build -t ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER} . --load"
             }
         }
     }
 }
+
 
 
         stage('Run Containers for Testing') {
