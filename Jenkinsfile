@@ -33,10 +33,10 @@ stage('Docker: Build Images') {
     steps {
         script {
             dir('backend') {
-                sh "docker buildx build -t ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER} . --load"
+                sh "docker build build -t ${docker_repo}/wanderlust-backend-beta:${env.BUILD_NUMBER} . "
             }
             dir('frontend') {
-                sh "docker buildx build -t ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER} . --load"
+                sh "docker build build -t ${docker_repo}/wanderlust-frontend-beta:${env.BUILD_NUMBER} . "
             }
         }
     }
