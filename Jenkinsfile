@@ -76,10 +76,10 @@ stage('Docker: Build Images') {
         stage('CD: Update Kubernetes YAML Files') {
             steps {
                 script {
-                    dir('backend') {
+                    dir('/var/lib/jenkins/workspace/wanderlust') {
                         sh "sed -i 's|${docker_username}/wanderlust-backend-beta:.*|${docker_username}/wanderlust-backend-beta:${env.BUILD_NUMBER}|' kubernetes/backend.yaml"
                     }
-                    dir('frontend') {
+                    dir('/var/lib/jenkins/workspace/wanderlust') {
                         sh "sed -i 's|${docker_username}/wanderlust-frontend-beta:.*|${docker_username}/wanderlust-frontend-beta:${env.BUILD_NUMBER}|' kubernetes/frontend.yaml"
                     }
                 }
