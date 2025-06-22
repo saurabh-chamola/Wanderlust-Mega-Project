@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     environment {
         github_url = 'https://github.com/saurabh-chamola/kubernetes.git'
         docker_username = 'saurabh0010'
