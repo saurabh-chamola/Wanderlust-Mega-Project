@@ -1,32 +1,35 @@
 # ------------------- Stage 1: Build Stage ------------------------------
 FROM node:21 AS frontend-builder
 
-# Set the working directory to /app
+# Set the working directory
 WORKDIR /app
 
-# Copy the package.json and package-lock.json for dependency installation
+# Copy dependency files
 COPY package*.json ./
 
-# Install dependencies
+# Install all dependencies
 RUN npm install
 
-# Copy the rest of the application code
+# Copy the rest of your application code
 COPY . .
 
-# ------------------- Stage 2: Final Stage ------------------------------
+# Build the production-ready static files using Vite
+RUN npm run build
+
+# ------------------- Stage 2: Production Stage -------------------------
 FROM node:21-slim
 
-# Set the working directory to /app
+# Set the working directory
 WORKDIR /app
 
-# Copy built assets and dependencies from frontend-builder stage
-COPY --from=frontend-builder /app .
+# Install a lightweight static server (like serve)
+RUN npm install -g serve
 
-# Copy the .env.sample file to .env.local
-COPY .env.docker .env.local
+# Copy only the built production assets from the previous stage
+COPY --from=frontend-builder /app/dist ./
 
-# Expose port 5173 for the Node.js application
+# Expose the port your app runs on (Vite default build is static, so any port works)
 EXPOSE 5173
 
-# Define the default command to run the application in development mode
-CMD ["npm", "run", "dev", "--", "--host"]
+# Run the production build using serve
+CMD ["serve", "-s", ".", "-l", "5173"]
