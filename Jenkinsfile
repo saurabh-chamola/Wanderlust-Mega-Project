@@ -7,6 +7,7 @@ pipeline {
         docker_repo = "${docker_username}"
     }
 
+    
     stages {
         stage('Workspace Cleanup') {
             steps {
