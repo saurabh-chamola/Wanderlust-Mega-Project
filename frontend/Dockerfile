@@ -10,8 +10,11 @@ COPY package*.json ./
 # Install all dependencies
 RUN npm install
 
-# Copy the rest of your application code
+# Copy all source files, including .env.docker
 COPY . .
+
+# Rename .env.docker to .env so Vite picks it up during build
+RUN cp .env.docker .env
 
 # Build the production-ready static files using Vite
 RUN npm run build
@@ -26,10 +29,10 @@ WORKDIR /app
 RUN npm install -g serve
 
 # Copy only the built production assets from the previous stage
-COPY --from=frontend-builder /app/dist ./
+COPY --from=frontend-builder /app/dist ./ 
 
-# Expose the port your app runs on (Vite default build is static, so any port works)
+# Expose the port your app will be served on
 EXPOSE 5173
 
-# Run the production build using serve
+# Serve the built frontend
 CMD ["serve", "-s", ".", "-l", "5173"]
