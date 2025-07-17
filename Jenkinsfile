@@ -52,8 +52,10 @@ pipeline {
         stage('Run Containers for Testing') {
             steps {
                 script {
-                    sh 'docker compose down || true'
-                    sh 'docker compose up -d'
+                    echo "skipping docker compose section"
+                    // sh 'docker compose down || true'
+                    // sh 'docker compose up -d'
+
                 }
             }
         }
