@@ -80,19 +80,14 @@ pipeline {
             }
         }
 
-        stage('CD: Update Kubernetes YAML Files') {
-            steps {
-                script {
-                    dir('backend') {
-                        sh "sed -i 's|${docker_username}/wanderlust-backend-beta:.*|${docker_username}/wanderlust-backend-beta:${env.BUILD_NUMBER}|' kubernetes/backend.yaml"
-                    }
-                    dir('frontend') {
-                        sh "sed -i 's|${docker_username}/wanderlust-frontend-beta:.*|${docker_username}/wanderlust-frontend-beta:${env.BUILD_NUMBER}|' kubernetes/frontend.yaml"
-                    }
-                }
-            }
+       stage('CD: Update Kubernetes YAML Files') {
+    steps {
+        script {
+            sh "sed -i 's|${docker_username}/wanderlust-backend-beta:.*|${docker_username}/wanderlust-backend-beta:${env.BUILD_NUMBER}|' kubernetes/backend.yaml"
+            sh "sed -i 's|${docker_username}/wanderlust-frontend-beta:.*|${docker_username}/wanderlust-frontend-beta:${env.BUILD_NUMBER}|' kubernetes/frontend.yaml"
         }
-
+    }
+}
 
 
 
