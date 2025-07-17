@@ -24,10 +24,17 @@ pipeline {
             steps {
                 script {
                     sh 'trivy fs . > trivy-report.txt'
-                    archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
+
+            // ✅ Show report in Jenkins console
+            sh 'echo "\n=== Trivy Vulnerability Report ==="'
+            sh 'cat trivy-report.txt'
+
+            // ✅ Archive the report
+            archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
                 }
             }
         }
+        
 
         stage('Docker: Build Images') {
             steps {
